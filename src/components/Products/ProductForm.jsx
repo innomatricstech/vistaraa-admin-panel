@@ -309,6 +309,126 @@ const ProductForm = ({ mode, product, categories, subCategories, onSave, onCance
     return getCategoryName(formData.categoryId).toLowerCase();
   };
 
+  // Function to get category-specific field groups
+  const getCategoryFieldGroups = () => {
+    const categoryName = getCurrentCategoryName();
+    
+    const fieldGroups = {
+      // Fashion/Clothing
+      fashion: [
+        'material', 'fit', 'pattern', 'sleevetype', 'careinstruction', 'sizeoptions',
+        'fittype', 'gender', 'necktype', 'occasion', 'stitchtype', 'vendor',
+        'variantsku', 'closuretype', 'embroiderystyle', 'lining', 'model', 'neckstyle',
+        'padtype', 'pockets', 'printtype', 'productlength', 'producttype', 'risestyle',
+        'sidetype', 'sleeve', 'sleevestyle', 'slittype', 'specialfeatures', 'straptype',
+        'style', 'transparent', 'type', 'worktype', 'blouseavailability', 'patterncoverage',
+        'age', 'agegroup', 'waiststyle'
+      ],
+      clothing: [
+        'material', 'fit', 'pattern', 'sleevetype', 'careinstruction', 'sizeoptions',
+        'fittype', 'gender', 'necktype', 'occasion', 'stitchtype', 'vendor',
+        'variantsku', 'closuretype', 'embroiderystyle', 'lining', 'model', 'neckstyle',
+        'padtype', 'pockets', 'printtype', 'productlength', 'producttype', 'risestyle',
+        'sidetype', 'sleeve', 'sleevestyle', 'slittype', 'specialfeatures', 'straptype',
+        'style', 'transparent', 'type', 'worktype', 'blouseavailability', 'patterncoverage',
+        'age', 'agegroup', 'waiststyle'
+      ],
+      // Mobile
+      mobile: [
+        'mobilecolor', 'ram', 'storage', 'battery', 'camera', 'processor',
+        'display', 'os', 'connectivity', 'warranty', 'color', 'designoptions'
+      ],
+      smartphone: [
+        'mobilecolor', 'ram', 'storage', 'battery', 'camera', 'processor',
+        'display', 'os', 'connectivity', 'warranty', 'color', 'designoptions'
+      ],
+      // Electronics
+      electronics: [
+        'resolution', 'displaytype', 'smartfeatures', 'energyrating', 'powerconsumption',
+        'expdate', 'mfgdate', 'highlight', 'otherhighlights'
+      ],
+      // Jewellery
+      jewellery: [
+        'jewellerymaterial', 'purity', 'jewelleryweight', 'jewellerycolor',
+        'jewellerysize', 'gemstone', 'certification'
+      ],
+      // Book
+      books: [
+        'title', 'author', 'publisher', 'edition', 'language', 'isbn',
+        'pages', 'binding', 'genre'
+      ],
+      // Home & Kitchen
+      home: ['framematerial', 'mountingtype'],
+      kitchen: ['framematerial', 'mountingtype'],
+      // Beauty
+      beauty: [
+        'shadecolor', 'beautytype', 'ingredients', 'skinhairtype',
+        'beautyweightvolume', 'beautyexpirydate', 'dermatologicallytested'
+      ],
+      // Furniture
+      furniture: ['dimension', 'weightcapacity', 'assembly', 'roomtype'],
+      // Grocery
+      grocery: [
+        'weightvolume', 'quantity', 'organic', 'expirydate',
+        'storageinstruction', 'dietarypreference'
+      ],
+      // Laptop
+      laptop: ['graphics', 'screensize', 'operatingsystem', 'port'],
+      // Footwear
+      footwear: [
+        'footwearmaterial', 'footweartype', 'shoesize', 'heelheight',
+        'solematerial', 'toeshape'
+      ]
+    };
+
+    // Return the relevant field group based on category name
+    for (const [key, fields] of Object.entries(fieldGroups)) {
+      if (categoryName.includes(key)) {
+        return fields;
+      }
+    }
+    
+    return []; // Return empty array if no matching category found
+  };
+
+  // Function to remove empty fields and keep only relevant category fields
+  const cleanCategoryFields = () => {
+    const relevantFields = getCategoryFieldGroups();
+    const cleaned = {};
+
+    // Only include fields that are relevant to the current category AND have values
+    relevantFields.forEach(field => {
+      const value = categoryFields[field];
+      // Check if value is not empty
+      if (value !== '' && 
+          value !== null && 
+          value !== undefined && 
+          !(Array.isArray(value) && value.length === 0)
+      ) {
+        cleaned[field] = value;
+      }
+    });
+
+    return cleaned;
+  };
+
+  // Function to remove empty fields from main form data
+  const removeEmptyFields = (obj) => {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(obj)) {
+      // Check if value is not empty (for strings, arrays, numbers)
+      if (value !== '' && 
+          value !== null && 
+          value !== undefined && 
+          !(Array.isArray(value) && value.length === 0) &&
+          !(typeof value === 'number' && value === 0 && key !== 'price' && key !== 'stock') // Keep price and stock even if 0
+      ) {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  };
+
   const renderCategorySpecificFields = () => {
     const categoryName = getCurrentCategoryName();
     
@@ -462,6 +582,16 @@ const ProductForm = ({ mode, product, categories, subCategories, onSave, onCance
                   className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Power Consumption</label>
+                <input
+                  type="text"
+                  name="powerconsumption"
+                  value={categoryFields.powerconsumption}
+                  onChange={handleCategoryFieldChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+              </div>
             </div>
           </div>
         );
@@ -563,7 +693,13 @@ const ProductForm = ({ mode, product, categories, subCategories, onSave, onCance
       // Add more cases for other categories...
 
       default:
-        return null;
+        return (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">No specific fields for this category</p>
+            <p className="text-sm text-gray-500 mt-1">Basic product information is sufficient</p>
+          </div>
+        );
     }
   };
 
@@ -599,16 +735,27 @@ const ProductForm = ({ mode, product, categories, subCategories, onSave, onCance
           stock: parseInt(variant.stock) || 0
         }));
 
-      const productData = {
+      // Clean form data - remove empty fields
+      const cleanedFormData = removeEmptyFields({
         ...formData,
         price: parseFloat(formData.price),
         salePrice: parseFloat(formData.salePrice) || 0,
         stock: parseInt(formData.stock) || 0,
         images: allImageUrls,
-        sizeVariants: processedSizeVariants,
-        categoryFields: categoryFields, // Add category-specific fields
-        updatedAt: serverTimestamp()
+        sizeVariants: processedSizeVariants.length > 0 ? processedSizeVariants : undefined
+      });
+
+      // Clean category-specific fields - keep only relevant fields with values
+      const cleanedCategoryFields = cleanCategoryFields();
+
+      const productData = {
+        ...cleanedFormData,
+        updatedAt: serverTimestamp(),
+        // Only include categoryFields if there are any non-empty values
+        ...(Object.keys(cleanedCategoryFields).length > 0 && { categoryFields: cleanedCategoryFields })
       };
+
+      console.log('Final product data to save:', productData); // For debugging
 
       if (mode === 'edit') {
         await updateDoc(doc(db, "products", product.id), productData);
