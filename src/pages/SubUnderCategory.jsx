@@ -248,93 +248,252 @@ const SubUnderCategory = () => {
   // UI
   // ----------------------
   return (
-    <div className="p-6 bg-gray-900 min-h-screen text-white">
+    <div className="p-6 bg-white min-h-screen">
 
       {/* HEADER */}
-      <div className="flex justify-between mb-6">
-        <h2 className="text-2xl font-bold">Sub Under Category</h2>
-        <div className="flex gap-3">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Sub Under Category Management</h2>
+          <p className="text-gray-600 mt-2">Manage your product sub under categories</p>
+        </div>
+
+        <div className="flex space-x-3">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 px-4 py-2 rounded-lg flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 shadow-md hover:shadow-lg transition-all duration-300"
           >
-            <Plus size={18} /> Add
+            <Plus size={20} />
+            <span>Add Sub Under Category</span>
           </button>
-          <button onClick={fetchAll} className="bg-gray-700 p-2 rounded-lg">
+
+          <button 
+            onClick={fetchAll}
+            className="bg-gray-100 hover:bg-gray-200 text-blue-600 p-3 rounded-xl shadow-md transition-all duration-300 hover:rotate-180 border border-gray-200"
+          >
             <RefreshCw size={20} />
           </button>
         </div>
       </div>
 
-      {/* SEARCH */}
-      <div className="bg-gray-800 p-4 mb-6 rounded-lg flex items-center">
-        <Search className="text-gray-400" />
-        <input
-          className="bg-gray-800 ml-3 outline-none text-white w-full"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* SEARCH & STATS CARD */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-6 mb-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+              <div className="text-blue-600 font-bold text-2xl">{list.length}</div>
+              <div className="text-gray-600 text-sm">Total Sub Under Categories</div>
+            </div>
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+              <div className="text-green-600 font-bold text-2xl">
+                {subUnderCategories.filter(i => i.data.isActive).length}
+              </div>
+              <div className="text-gray-600 text-sm">Active</div>
+            </div>
+          </div>
+
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" />
+            <input
+              type="text"
+              placeholder="Search sub under category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl bg-white border border-gray-300 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+            />
+          </div>
+        </div>
       </div>
 
       {/* TABLE */}
-      <div className="bg-gray-800 rounded-lg overflow-hidden">
+      <div className="hidden lg:block bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-gray-700 text-gray-300">
+          <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
             <tr>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Status</th>
-              <th className="px-4 py-3 text-left">Sort</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-6 py-4 text-left text-white font-semibold">Name</th>
+              <th className="px-6 py-4 text-left text-white font-semibold">Status</th>
+              <th className="px-6 py-4 text-left text-white font-semibold">Sort Order</th>
+              <th className="px-6 py-4 text-left text-white font-semibold">Commission</th>
+              <th className="px-6 py-4 text-right text-white font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {list.map((i) => (
-              <tr key={i.id} className="border-b border-gray-700">
-                <td className="px-4 py-3">{i.data.name}</td>
-                <td className="px-4 py-3">
-                  {i.data.isActive ? "Active" : "Inactive"}
-                </td>
-                <td className="px-4 py-3">{i.data.sortOrder}</td>
 
-                <td className="px-4 py-3 text-right flex justify-end gap-4">
-                  <button onClick={() => handleEdit(i)} className="text-blue-400">
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(i.id)}
-                    className="text-red-400"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="text-center text-gray-500 py-8">
+                  <div className="flex justify-center items-center space-x-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+                    <span>Loading sub under categories...</span>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : list.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="text-center text-gray-500 py-8">
+                  No sub under categories found. Create your first one!
+                </td>
+              </tr>
+            ) : (
+              list.map((item, index) => (
+                <tr
+                  key={item.id}
+                  className={`border-b border-gray-100 hover:bg-blue-50 transition-all duration-300 ${
+                    index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                  }`}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      {item.data.image && (
+                        <img
+                          src={item.data.image}
+                          className="w-10 h-10 rounded-lg object-cover border-2 border-blue-200"
+                          alt={item.data.name}
+                        />
+                      )}
+                      <div className="text-gray-800 font-medium">{item.data.name}</div>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      item.data.isActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {item.data.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                      {item.data.sortOrder}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {item.data.commissionValue > 0 ? (
+                      <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                        {item.data.commissionValue}
+                        {item.data.commissionType === "percent" ? "%" : " ₹"}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
+                  </td>
+
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex space-x-2 justify-end">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="bg-blue-100 hover:bg-blue-200 text-blue-600 p-2 rounded-lg transition-all duration-300 hover:scale-110"
+                      >
+                        <Edit size={18} />
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-all duration-300 hover:scale-110"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* MOBILE CARDS */}
+      <div className="lg:hidden space-y-4">
+        {list.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white border border-gray-200 rounded-2xl p-4 hover:bg-blue-50 transition-all duration-300 shadow-sm"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex space-x-4">
+                {item.data.image && (
+                  <img
+                    src={item.data.image}
+                    className="h-16 w-16 rounded-xl object-cover border-2 border-blue-200"
+                    alt={item.data.name}
+                  />
+                )}
+                
+                <div>
+                  <h3 className="text-gray-800 text-lg font-semibold">
+                    {item.data.name}
+                  </h3>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      item.data.isActive 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {item.data.isActive ? "Active" : "Inactive"}
+                    </span>
+                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                      Sort: {item.data.sortOrder}
+                    </span>
+                  </div>
+                  {item.data.commissionValue > 0 && (
+                    <div className="mt-2">
+                      <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
+                        {item.data.commissionValue}
+                        {item.data.commissionType === "percent" ? "%" : " ₹"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-600 p-2 rounded-lg transition-colors"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ---------------------- */}
       {/* MODAL */}
       {/* ---------------------- */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-gray-800 p-6 rounded-xl w-full max-w-lg">
-
-            {/* HEADER */}
-            <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-bold">
-                {selectedSubUnderCategory ? "Edit" : "Add"} Sub Under Category
-              </h3>
-              <button onClick={handleCancel}><X /></button>
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-white">
+                  {selectedSubUnderCategory ? "Edit" : "Add"} Sub Under Category
+                </h3>
+                <button 
+                  onClick={handleCancel}
+                  className="text-white/80 hover:text-white p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="p-6 max-h-[80vh] overflow-y-auto">
 
               {/* IMAGE */}
-              <div className="mb-4">
-                <label className="block mb-2">Image *</label>
-                <div className="relative h-28 bg-gray-700 rounded-lg flex justify-center items-center cursor-pointer">
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-3 block">Image</label>
+                <div className="relative h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex justify-center items-center cursor-pointer hover:border-blue-500 transition-all duration-300">
                   <input
                     type="file"
                     className="absolute inset-0 opacity-0 cursor-pointer"
@@ -346,30 +505,33 @@ const SubUnderCategory = () => {
                     <>
                       <img
                         src={previewImage}
-                        className="h-full w-full object-cover rounded-lg"
+                        className="h-full w-full object-cover rounded-xl"
                       />
                       <button
                         type="button"
                         onClick={clearImage}
-                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full"
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
                       >
-                        <X size={14} />
+                        <X size={16} />
                       </button>
                     </>
                   ) : (
-                    <Camera size={30} className="text-gray-400" />
+                    <div className="text-center">
+                      <Camera size={32} className="text-blue-500 mx-auto mb-2" />
+                      <span className="text-gray-600 text-sm">Upload Image</span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* CATEGORY */}
-              <div className="mb-4">
-                <label>Category *</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Category *</label>
                 <select
                   name="categoryId"
                   value={formData.categoryId}
                   onChange={handleInput}
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                   required
                 >
                   <option value="">Select Category</option>
@@ -382,14 +544,14 @@ const SubUnderCategory = () => {
               </div>
 
               {/* SUB CATEGORY */}
-              <div className="mb-4">
-                <label>Sub Category *</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Sub Category *</label>
                 <select
                   name="subCategoryId"
                   disabled={!formData.categoryId}
                   value={formData.subCategoryId}
                   onChange={handleInput}
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   required
                 >
                   <option value="">Select Sub Category</option>
@@ -405,20 +567,21 @@ const SubUnderCategory = () => {
               </div>
 
               {/* NAME */}
-              <div className="mb-4">
-                <label>Name *</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Name *</label>
                 <input
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                   value={formData.name}
                   onChange={handleInput}
                   name="name"
                   required
+                  placeholder="Enter sub under category name"
                 />
               </div>
 
               {/* ACTIVE */}
-              <div className="mb-4 flex items-center justify-between">
-                <label>Active Status</label>
+              <div className="flex items-center justify-between mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <label className="text-gray-700 font-medium">Active Status</label>
                 <button
                   type="button"
                   onClick={() =>
@@ -426,19 +589,25 @@ const SubUnderCategory = () => {
                   }
                 >
                   {formData.isActive ? (
-                    <ToggleRight size={36} className="text-green-400" />
+                    <div className="flex items-center space-x-2">
+                      <span className="text-green-600 text-sm font-medium">Active</span>
+                      <ToggleRight size={36} className="text-green-500" />
+                    </div>
                   ) : (
-                    <ToggleLeft size={36} className="text-gray-400" />
+                    <div className="flex items-center space-x-2">
+                      <span className="text-red-600 text-sm font-medium">Inactive</span>
+                      <ToggleLeft size={36} className="text-red-500" />
+                    </div>
                   )}
                 </button>
               </div>
 
               {/* SORT ORDER */}
-              <div className="mb-4">
-                <label>Sort Order *</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Sort Order *</label>
                 <input
                   type="number"
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                   value={formData.sortOrder}
                   name="sortOrder"
                   onChange={handleInput}
@@ -447,11 +616,11 @@ const SubUnderCategory = () => {
               </div>
 
               {/* COMMISSION TYPE */}
-              <div className="mb-4">
-                <label>Commission Type</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Commission Type</label>
                 <select
                   name="commissionType"
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                   value={formData.commissionType}
                   onChange={handleInput}
                 >
@@ -461,28 +630,42 @@ const SubUnderCategory = () => {
               </div>
 
               {/* COMMISSION VALUE */}
-              <div className="mb-4">
-                <label>Commission Value</label>
+              <div className="mb-6">
+                <label className="text-gray-700 font-medium mb-2 block">Commission Value</label>
                 <input
                   type="number"
                   name="commissionValue"
-                  className="w-full bg-gray-700 p-2 rounded"
+                  className="w-full bg-white border border-gray-300 text-gray-800 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                   value={formData.commissionValue}
                   onChange={handleInput}
+                  placeholder="Enter commission value"
                 />
               </div>
 
               {/* BUTTONS */}
-              <div className="flex gap-3">
+              <div className="flex space-x-4 mt-8 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  className="w-1/2 bg-gray-600 p-2 rounded"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-sm border border-gray-200"
                   onClick={handleCancel}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="w-1/2 bg-blue-600 p-2 rounded">
-                  {loading ? "Saving..." : "Submit"}
+                <button 
+                  type="submit" 
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-sm disabled:opacity-50 disabled:hover:scale-100"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <span>Saving...</span>
+                    </div>
+                  ) : selectedSubUnderCategory ? (
+                    "Update Sub Under Category"
+                  ) : (
+                    "Create Sub Under Category"
+                  )}
                 </button>
               </div>
             </form>
