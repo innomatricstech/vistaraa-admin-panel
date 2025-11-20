@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import Dashboard from './pages/Dashboard';
+import ProductManagement from './components/Products/ProductManagement';
 import Category from './pages/Category';
 import SubCategory from './pages/SubCategory';
 import SubUnderCategory from './pages/SubUnderCategory';
@@ -28,6 +30,8 @@ const App = () => {
           {/* Main content */}
           <main className="flex-1 overflow-auto bg-gray-900">
             <Routes>
+ <Route path="/" element={<Dashboard/>} />
+ <Route path="/products" element={<ProductManagement/>}/>
 
               {/* Default route */}
               <Route path="/" element={<Category />} />

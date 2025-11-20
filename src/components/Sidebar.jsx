@@ -24,7 +24,8 @@ import {
 const Sidebar = ({ isOpen, onClose }) => {
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/category', icon: FolderOpen, label: 'Category' },
+    { path: '/products', icon: FolderOpen, label: 'Products' },
+    { path: '/category', icon: Layers, label: 'Category' },
     { path: '/sub-category', icon: Layers, label: 'Sub Category' },
     { path: '/sub-under-category', icon: Layers3, label: 'Sub Under Category' },
     { path: '/brands', icon: Tag, label: 'Brands' },
