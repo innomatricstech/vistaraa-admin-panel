@@ -19,6 +19,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  setDoc, // <--- Added setDoc for explicit ID storage
 } from "firebase/firestore";
 import {
   ref,
@@ -45,21 +46,32 @@ const subCategoryService = {
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
 
+  // MODIFIED: To store the document ID explicitly as a field named 'id'
   add: async (data, file) => {
+    // 1. Get a new document reference first to generate the unique ID
+    const newDocRef = doc(subCategoryCollection);
+    const docId = newDocRef.id;
+
     const imageURL = await uploadImage(file);
 
     const newData = {
       ...data,
+      id: docId, // <--- Explicitly store the ID here
       image: imageURL,
       createdAt: Date.now(),
     };
 
-    const docRef = await addDoc(subCategoryCollection, newData);
-    return { id: docRef.id, ...newData };
+    // 2. Use setDoc to write the data to the specific document reference
+    await setDoc(newDocRef, newData);
+
+    return { id: docId, ...newData };
   },
 
   update: async (id, data, file) => {
-    const updateData = { ...data };
+    const updateData = { 
+      ...data,
+      id: id // Ensure the internal ID field is preserved/updated
+    };
 
     if (file) {
       updateData.image = await uploadImage(file);

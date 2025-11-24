@@ -8,7 +8,7 @@ import {
   X,
   Camera,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
 } from "lucide-react";
 
 import {
@@ -21,11 +21,12 @@ import {
 
 import {
   collection,
-  addDoc,
+  // ❌ REMOVED: addDoc
   getDocs,
   updateDoc,
   deleteDoc,
-  doc
+  doc,
+  setDoc, // ✅ ADDED: setDoc for writing data with a specific ID
 } from "firebase/firestore";
 
 const SubUnderCategory = () => {
@@ -69,6 +70,7 @@ const SubUnderCategory = () => {
       const subCatSnap = await getDocs(collection(db, "subcategories"));
       const subUnderSnap = await getDocs(collection(db, "subunder"));
 
+      // Documents are mapped to include their Firestore ID for manipulation
       setCategories(
         catSnap.docs.map((d) => ({
           id: d.id,
@@ -118,6 +120,7 @@ const SubUnderCategory = () => {
       const cat = categories.find((c) => c.id === formData.categoryId);
       const subcat = subCategories.find((s) => s.id === value);
 
+      // Generate a default name based on parent names
       const generated =
         cat && subcat ? `${cat.data.name} ${subcat.data.name} Under Category` : "";
 
@@ -157,7 +160,8 @@ const SubUnderCategory = () => {
   };
 
   const uploadImage = async () => {
-    if (!imageFile) return formData.image;
+    // If no new file is selected, return the existing URL or an empty string
+    if (!imageFile) return formData.image || ""; 
 
     const fileName = `subunder_${Date.now()}_${imageFile.name}`;
     const storageRef = ref(storage, `sub_under_categories/${fileName}`);
@@ -166,7 +170,7 @@ const SubUnderCategory = () => {
   };
 
   // ----------------------
-  // SUBMIT FORM
+  // SUBMIT FORM (MODIFIED)
   // ----------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -174,15 +178,39 @@ const SubUnderCategory = () => {
     try {
       const url = await uploadImage();
 
-      const payload = {
+      // Base payload data
+      const basePayload = {
         ...formData,
         image: url,
       };
 
       if (selectedSubUnderCategory) {
-        await updateDoc(doc(db, "subunder", selectedSubUnderCategory.id), payload);
+        // --- UPDATE EXISTING DOCUMENT ---
+        // Ensure the ID field is included in the update payload
+        const updatePayload = {
+            ...basePayload,
+            id: selectedSubUnderCategory.id // Keep the existing ID in the document data
+        };
+
+        const docRef = doc(db, "subunder", selectedSubUnderCategory.id);
+        await updateDoc(docRef, updatePayload);
+
       } else {
-        await addDoc(collection(db, "subunder"), payload);
+        // --- CREATE NEW DOCUMENT (MODIFIED) ---
+        // 1. Create a reference to a new document with an auto-generated ID
+        const subUnderCollection = collection(db, "subunder");
+        const docRef = doc(subUnderCollection);
+        const newId = docRef.id;
+
+        // 2. Construct the final payload including the redundant ID
+        const createPayload = {
+            ...basePayload,
+            id: newId, // **<-- STORES THE DOCUMENT ID INSIDE THE DOCUMENT**
+            createdAt: Date.now(), // Optional: Add timestamp
+        };
+
+        // 3. Write the data using setDoc
+        await setDoc(docRef, createPayload);
       }
 
       handleCancel();
@@ -201,6 +229,8 @@ const SubUnderCategory = () => {
   const handleEdit = (item) => {
     setSelectedSubUnderCategory(item);
 
+    // Pass the document data (which now includes the 'id' field if created with the new logic)
+    // The data structure used here is { id: doc.id, data: doc.data() }
     setFormData({
       ...item.data,
     });
@@ -212,8 +242,16 @@ const SubUnderCategory = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this item?")) return;
 
-    await deleteDoc(doc(db, "subunder", id));
-    setSubUnderCategories((prev) => prev.filter((i) => i.id !== id));
+    try {
+        setLoading(true);
+        await deleteDoc(doc(db, "subunder", id));
+        setSubUnderCategories((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+        console.error("Delete failed:", err);
+        alert("Error deleting item.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -249,7 +287,6 @@ const SubUnderCategory = () => {
   // ----------------------
   return (
     <div className="p-6 bg-white min-h-screen">
-
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -259,7 +296,7 @@ const SubUnderCategory = () => {
 
         <div className="flex space-x-3">
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {handleCancel(); setIsModalOpen(true);}}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 shadow-md hover:shadow-lg transition-all duration-300"
           >
             <Plus size={20} />
@@ -268,9 +305,9 @@ const SubUnderCategory = () => {
 
           <button 
             onClick={fetchAll}
-            className="bg-gray-100 hover:bg-gray-200 text-blue-600 p-3 rounded-xl shadow-md transition-all duration-300 hover:rotate-180 border border-gray-200"
+            className="bg-gray-100 hover:bg-gray-200 text-blue-600 p-3 rounded-xl shadow-md transition-all duration-300 border border-gray-200"
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''}/>
           </button>
         </div>
       </div>
@@ -309,18 +346,19 @@ const SubUnderCategory = () => {
         <table className="w-full">
           <thead className="bg-gradient-to-r from-blue-500 to-indigo-600">
             <tr>
-              <th className="px-6 py-4 text-left text-white font-semibold">Name</th>
-              <th className="px-6 py-4 text-left text-white font-semibold">Status</th>
-              <th className="px-6 py-4 text-left text-white font-semibold">Sort Order</th>
-              <th className="px-6 py-4 text-left text-white font-semibold">Commission</th>
-              <th className="px-6 py-4 text-right text-white font-semibold">Actions</th>
+              <th className="px-6 py-4 text-left text-white font-semibold w-1/4">Name</th>
+              <th className="px-6 py-4 text-left text-white font-semibold">Document ID</th> {/* Display the ID */}
+              <th className="px-6 py-4 text-left text-white font-semibold w-[100px]">Status</th>
+              <th className="px-6 py-4 text-left text-white font-semibold w-[100px]">Sort Order</th>
+              <th className="px-6 py-4 text-left text-white font-semibold w-[150px]">Commission</th>
+              <th className="px-6 py-4 text-right text-white font-semibold w-[100px]">Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {loading ? (
+            {loading && list.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center text-gray-500 py-8">
+                <td colSpan="6" className="text-center text-gray-500 py-8">
                   <div className="flex justify-center items-center space-x-3">
                     <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
                     <span>Loading sub under categories...</span>
@@ -329,7 +367,7 @@ const SubUnderCategory = () => {
               </tr>
             ) : list.length === 0 ? (
               <tr>
-                <td colSpan="5" className="text-center text-gray-500 py-8">
+                <td colSpan="6" className="text-center text-gray-500 py-8">
                   No sub under categories found. Create your first one!
                 </td>
               </tr>
@@ -343,15 +381,24 @@ const SubUnderCategory = () => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      {item.data.image && (
+                      {item.data.image ? (
                         <img
                           src={item.data.image}
                           className="w-10 h-10 rounded-lg object-cover border-2 border-blue-200"
                           alt={item.data.name}
                         />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-300">
+                          <Camera size={16} className="text-gray-400"/>
+                        </div>
                       )}
                       <div className="text-gray-800 font-medium">{item.data.name}</div>
                     </div>
+                  </td>
+                  
+                  {/* DOCUMENT ID DISPLAY */}
+                  <td className="px-6 py-4 text-xs font-mono text-gray-500 overflow-hidden whitespace-nowrap overflow-ellipsis max-w-[150px]">
+                    {item.id}
                   </td>
 
                   <td className="px-6 py-4">
@@ -426,6 +473,8 @@ const SubUnderCategory = () => {
                   <h3 className="text-gray-800 text-lg font-semibold">
                     {item.data.name}
                   </h3>
+                  <p className="text-xs font-mono text-gray-400 mt-1">ID: {item.id}</p> {/* Display the ID */}
+
                   <div className="flex items-center space-x-2 mt-2">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       item.data.isActive 
@@ -489,6 +538,13 @@ const SubUnderCategory = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 max-h-[80vh] overflow-y-auto">
+
+              {/* Show the ID in the modal when editing */}
+              {selectedSubUnderCategory && (
+                <div className="mb-6 p-3 bg-gray-100 rounded-xl text-sm font-mono text-gray-600 border border-gray-200">
+                    Document ID: **{selectedSubUnderCategory.id}**
+                </div>
+              )}
 
               {/* IMAGE */}
               <div className="mb-6">
